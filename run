@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+docker build -t ipcheck .
+
+docker stop ipcheck || /bin/true
+docker rm   ipcheck || /bin/true
+
+docker run -d \
+  -e BEHIND_PROXY=2 \
+  --name ipcheck \
+  --restart always \
+  -p 8928:8000 \
+  -v $PWD/ipv4.csv:/app/ipv4.csv:ro \
+  -l com.huntprod.docker.route=ip.vivanti.com \
+  -l com.huntprod.docker.port=8928 \
+  ipcheck

@@ -6,6 +6,13 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+if os.getenv('BEHIND_PROXY', '') != '':
+  from werkzeug.middleware.proxy_fix import ProxyFix
+  n=int(os.getenv('BEHIND_PROXY'))
+  app.wsgi_app = ProxyFix(
+    app.wsgi_app, x_for=n, x_proto=n, x_host=n, x_prefix=n
+  )
+
 eng = create_engine("duckdb:///:memory:")
 
 @app.route('/check')
