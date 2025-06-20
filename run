@@ -11,7 +11,7 @@ docker run -d \
   --name ipcheck \
   --restart always \
   -p 8928:8000 \
-  -v $PWD/ipv4.csv:/app/ipv4.csv:ro \
+  -v $PWD/ip.db:/app/ip.db:ro \
   -l com.huntprod.docker.route=ip.vivanti.com \
   -l com.huntprod.docker.port=8928 \
   ipcheck
