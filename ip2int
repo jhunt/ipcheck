@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+import sys, ipaddress
+
+for arg in sys.argv[1:]:
+  ip = ipaddress.ip_address(arg)
+  numeric = f'{int(ip):010}' if ip.version == 4 else f'{int(ip):038}'
+  print(f'ipv{ip.version} {ip} {numeric}')
