@@ -1,4 +1,5 @@
 import os
+import ipaddress
 from sqlalchemy import text, create_engine
 from flask import Flask, request
 from flask_cors import CORS
@@ -13,25 +14,36 @@ if os.getenv('BEHIND_PROXY', '') != '':
     app.wsgi_app, x_for=n, x_proto=n, x_host=n, x_prefix=n
   )
 
-eng = create_engine("duckdb:///:memory:")
+eng = create_engine("sqlite:///ip.db")
 
-@app.route('/check')
-def check_ip():
-  ipv4 = request.remote_addr.split('.')
-  #ipv4 = '66.78.209.135'.split('.')
+def pad(ip):
+  return f'{int(ip):010}' if ip.version == 4 else f'{int(ip):038}'
+
+def lookup_ip(addr):
+  ip = ipaddress.ip_address(addr)
   with eng.connect() as c:
     r = c.execute(text(f'''
-    select country
-      from read_csv('ipv4.csv')
-     where {ipv4[0]} between start_octet_1 and end_octet_1
-       and {ipv4[1]} between start_octet_2 and end_octet_2
-       and {ipv4[2]} between start_octet_3 and end_octet_3
-       and {ipv4[3]} between start_octet_4 and end_octet_4
+    select locale, country, continent, network
+      from ip
+     where '{pad(ip)}' between first_address and last_address
+       and version = {ip.version}
     ''')).fetchone()
+    l = None
     c = None
     if r is not None:
-      (c,) = r
-    return {'a': request.remote_addr, 'l': c}
+      (l,c,co,net) = r
+      print(f'{addr} <{int(ip)}> is in {c}, on {co} via {net}')
+    else:
+      print(f'{addr} <{int(ip)}> NOT FOUND')
+    return {'a': addr, 'l': l, 'c': c}
+
+@app.route('/check')
+def check_ip_implicit():
+  return lookup_ip(request.remote_addr)
+
+@app.route('/check/<addr>')
+def check_ip_explicit(addr):
+  return lookup_ip(addr)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
