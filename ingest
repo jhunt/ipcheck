@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# vim:ft=python
+import ipaddress
+import sys
+import time
+
+import duckdb
+import csv
+
+def pad(ip):
+  return f'{int(ip):010}' if ip.version == 4 else f'{int(ip):038}'
+
+with open('ip-raw.csv', 'w', newline='') as out_f:
+  out = csv.writer(out_f, quoting=csv.QUOTE_ALL)
+
+  out.writerow([
+    'country', 'continent', 'version', 'first_address', 'last_address', 'network', 'prefixlen'
+  ])
+
+  r = duckdb.sql('''
+    select country_code,
+           continent_code,
+           network
+      from 'ipinfo_lite.json.gz'
+  ''')
+
+  n = 0
+  errors = 0
+  ms_a = time.monotonic_ns()
+  while True:
+    x = r.fetchone()
+    if x is None:
+      break
+    (cc, co, network) = x
+    net = ipaddress.ip_network(network)
+    #print(f'{cc} on {co} has v{net.version} {network} from ({int(net[0])}) to ({int(net[-1])})...')
+    if net.version in [4,6]:
+      n += 1
+      out.writerow([cc, co, net.version, pad(net[0]), pad(net[-1]), network, net.max_prefixlen])
+    else:
+      errors += 1
+      print('unknown version')
+  ms_b = time.monotonic_ns()
+  print(f'processed {n} allocations, in {round((ms_b - ms_a) / 1000000.0)}ms ({errors} errors)')

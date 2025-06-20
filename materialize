@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+
+rm -f x.db ip.db
+duckdb -s "copy (select raw.*, coalesce(regions.country, raw.country) as locale from 'ip-raw.csv' as raw join 'regions.csv' as regions using (continent)) to 'ip.csv';"
+cat <<EOF | time sqlite3 ip.db
+.mode csv
+.import ip.csv ip
+EOF

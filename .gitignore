@@ -1,2 +1,8 @@
 /py
-/*.csv
+/__pycache__
+/ip-raw.csv
+/ip.csv
+/*.csv.gz
+/*.json
+/*.json.gz
+/*.db
