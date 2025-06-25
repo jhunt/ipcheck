@@ -10,7 +10,7 @@ docker run -d \
   -e BEHIND_PROXY=2 \
   --name ipcheck \
   --restart always \
-  -p 8928:8000 \
+  -p 127.0.0.1:8928:8000 \
   -v $PWD/ip.db:/app/ip.db:ro \
   -l com.huntprod.docker.route=ip.vivanti.com \
   -l com.huntprod.docker.port=8928 \
